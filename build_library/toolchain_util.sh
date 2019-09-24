@@ -3,11 +3,19 @@
 # Toolchain packages are treated a bit specially, since they take a
 # while to build and are generally more complicated to build they are
 # only built via catalyst and everyone else installs them as binpkgs.
-TOOLCHAIN_PKGS=(
-    sys-devel/binutils
-    sys-devel/gcc
+TOOLCHAIN_PKGS_NODEPS=(
     sys-kernel/linux-headers
     sys-libs/glibc
+)
+
+TOOLCHAIN_PKGS_DEPS=(
+    sys-devel/gcc
+    sys-devel/binutils
+)
+
+TOOLCHAIN_PKGS=(
+    "${TOOLCHAIN_PKGS_NODEPS[@]}"
+    "${TOOLCHAIN_PKGS_DEPS[@]}"
 )
 
 # Portage profile to use for building out the cross compiler's SYSROOT.

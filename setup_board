@@ -322,12 +322,27 @@ if [[ ${FLAGS_regen_configs} -eq ${FLAGS_FALSE} ]]; then
     "${EMERGE_WRAPPER}" --buildpkg --buildpkgonly \
         --root="/usr/${BOARD_CHOST}" --sysroot="/usr/${BOARD_CHOST}" \
 	${EMERGE_TOOLCHAIN_FLAGS} "${TOOLCHAIN_PKGS[@]}"
-  fi
 
-  info "Installing toolchain"
-  "${EMERGE_WRAPPER}" \
-      --usepkgonly --getbinpkg --rebuilt-binaries n \
-      ${EMERGE_TOOLCHAIN_FLAGS} "${TOOLCHAIN_PKGS[@]}"
+    info "Installing toolchain"
+    # It is necessary to sequentially install toolchain packages one after
+    # another, because TOOLCHAIN_PKGS_DEPS packages require other packages
+    # in TOOLCHAIN_PKGS_NODEPS to be installed beforehand.
+    for pkg in "${TOOLCHAIN_PKGS_NODEPS[@]}"; do
+      "${EMERGE_WRAPPER}" ${EMERGE_FLAGS} --nodeps \
+          ${EMERGE_TOOLCHAIN_FLAGS} "${pkg}"
+    done
+
+    for pkg in "${TOOLCHAIN_PKGS_DEPS[@]}"; do
+      "${EMERGE_WRAPPER}" ${EMERGE_FLAGS} \
+          ${EMERGE_TOOLCHAIN_FLAGS} "${pkg}"
+    done
+  else
+    # cases for installing binary packages
+    info "Installing toolchain"
+    "${EMERGE_WRAPPER}" \
+        --usepkgonly --getbinpkg --rebuilt-binaries n \
+        ${EMERGE_TOOLCHAIN_FLAGS} "${TOOLCHAIN_PKGS[@]}"
+  fi
 fi
 
 if [[ ${FLAGS_regen_configs_only} -eq ${FLAGS_FALSE} ]]; then
