@@ -4,6 +4,8 @@ set -e
 source /tmp/chroot-functions.sh
 source /tmp/toolchain_util.sh
 
+export clst_myemergeopts="$( echo "$clst_myemergeopts" | sed -e 's/--newuse//' )"
+
 # A note on packages:
 # The default PKGDIR is /usr/portage/packages
 # To make sure things are uploaded to the correct places we split things up:

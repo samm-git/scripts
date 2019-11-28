@@ -2,6 +2,8 @@
 
 source /tmp/chroot-functions.sh
 
+export clst_myemergeopts="$( echo "$clst_myemergeopts" | sed -e 's/--newuse//' )"
+
 echo "Double checking everything is fresh and happy."
 run_merge -uDN --with-bdeps=y world
 

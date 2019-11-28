@@ -224,6 +224,8 @@ catalyst_init() {
         SEED="seed/${FLAGS_seed_tarball##*/}"
         SEED="${SEED%.tar.bz2}"
     fi
+
+    sudo find /usr/share/catalyst/targets -type f -exec perl -pi -e 's/--newuse//g' {} \;
 }
 
 write_configs() {
