@@ -180,7 +180,7 @@ done
 
 "${BUILD_LIBRARY_DIR}/set_lsb_release" --root /
 
-EMERGE_FLAGS=( -uNv --with-bdeps=y --select )
+EMERGE_FLAGS=( --with-bdeps=y --select )
 REBUILD_FLAGS=()
 if [ "${FLAGS_usepkg}" -eq "${FLAGS_TRUE}" ]; then
   EMERGE_FLAGS+=( --usepkg )
@@ -238,9 +238,15 @@ fi
 
 # Second pass, update everything else.
 EMERGE_FLAGS+=( --deep )
+
+EMERGE_NOUPDATE_FLAGS=(${EMERGE_FLAGS})
+EMERGE_FLAGS+=( -uNv )
+
 info "Updating all SDK packages"
 sudo -E ${EMERGE_CMD} "${EMERGE_FLAGS[@]}" \
     coreos-devel/sdk-depends world
+sudo -E ${EMERGE_CMD} "${EMERGE_NOUPDATE_FLAGS[@]}" \
+    dev-lang/rust
 
 info "Removing obsolete packages"
 sudo -E ${EMERGE_CMD} --quiet --depclean @unavailable
