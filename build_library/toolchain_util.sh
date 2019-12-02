@@ -4,6 +4,7 @@
 # while to build and are generally more complicated to build they are
 # only built via catalyst and everyone else installs them as binpkgs.
 TOOLCHAIN_PKGS=(
+    dev-lang/rust
     sys-devel/binutils
     sys-devel/gcc
     sys-kernel/linux-headers
