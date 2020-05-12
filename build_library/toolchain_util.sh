@@ -326,19 +326,12 @@ install_cross_toolchain() {
     if emerge "${emerge_flags[@]}" \
         --pretend "${cross_pkgs[@]}" | grep -q '^\[ebuild'
     then
+        echo "Doing a full bootstrap via crossdev"
         $sudo crossdev "${cross_flags[@]}" --stage4
     else
+        echo "Installing existing binaries"
         $sudo emerge "${emerge_flags[@]}" \
             "cross-${cross_chost}/gdb" "${cross_pkgs[@]}"
-        if [ "${cross_chost}" = aarch64-cros-linux-gnu ]; then
-          # Here we need to take only the binary packages from the toolchain-arm64 builds
-          # because the standard Rust packages don't include the arm64 cross target.
-          FILTERED="$(echo $PORTAGE_BINHOST | tr ' ' '\n' | grep toolchain | sed 's#toolchain/#toolchain-arm64/#g' | xargs echo)"
-          # If no aarch64 folder exists, try to remove any existing Rust packages.
-          [ ! -d /usr/lib/rust-*/rustlib/aarch64-unknown-linux-gnu ] && ($sudo emerge -C dev-lang/rust || true)
-          # Building from source is also ok because the cross-compiler got installed.
-          $sudo PORTAGE_BINHOST="$FILTERED" emerge "${emerge_flags[@]}" dev-lang/rust
-        fi
     fi
 
     # Setup environment and wrappers for our shiny new toolchain
@@ -372,7 +365,7 @@ install_cross_libs() {
     # updating package.provided. Otherwise portage will no-op.
     $sudo rm -f "${package_provided}/cross-${cross_chost}"
     local cross_deps=$(ROOT="$ROOT" _get_dependency_list \
-        "$@" "${TOOLCHAIN_PKGS[@]}" | $sudo tee \
+        "$@" "${TOOLCHAIN_PKGS[@]}" "dev-lang/rust" | $sudo tee \
         "$ROOT/etc/portage/cross-${cross_chost}-depends")
 
     # Add toolchain to packages.provided since they are on the host system
@@ -390,6 +383,17 @@ install_cross_libs() {
 
     # OK, clear as mud? Install those dependencies now!
     PORTAGE_CONFIGROOT="$ROOT" $sudo emerge --root="$ROOT" --sysroot="$ROOT" "$@" -u $cross_deps
+
+    if [ "${cross_chost}" = "aarch64-cros-linux-gnu" ]; then
+        echo "Building Rust for arm64"
+        # Here we need to take only the binary packages from the toolchain-arm64 builds
+        # because the standard Rust packages don't include the arm64 cross target.
+        FILTERED="$(echo $PORTAGE_BINHOST | tr ' ' '\n' | grep toolchain | sed 's#toolchain/#toolchain-arm64/#g' | xargs echo)"
+        # If no aarch64 folder exists, try to remove any existing Rust packages.
+        [ ! -d /usr/lib/rust-*/rustlib/aarch64-unknown-linux-gnu ] && ($sudo emerge -C dev-lang/rust || true)
+        # Building from source is also ok because the cross-compiler got installed.
+        $sudo PORTAGE_BINHOST="$FILTERED" emerge "${emerge_flags[@]}" dev-lang/rust
+    fi
 }
 
 # Get the latest GCC profile for a given CHOST
