@@ -517,7 +517,16 @@ EOF
 
   # Build the selinux policy
   if pkg_use_enabled coreos-base/coreos selinux; then
-      sudo chroot "${root_fs_dir}" bash -c "cd /usr/share/selinux/mcs && semodule -s mcs -i *.pp"
+    if ! mountpoint -q "${root_fs_dir}/sys"; then
+      sudo mount -t sysfs none "${root_fs_dir}/sys"
+    fi
+    if ! mountpoint -q "${root_fs_dir}/sys/fs/selinux"; then
+      sudo mount -t selinuxfs none "${root_fs_dir}/sys/fs/selinux"
+    fi
+    sudo chroot "${root_fs_dir}" bash -c "cd /usr/share/selinux/mcs && semodule -s mcs -i *.pp"
+    sudo chroot "${root_fs_dir}" bash -c "find / -maxdepth 1 | egrep -v 'boot|proc|sys' | xargs restorecon -R || true"
+    sudo umount "${root_fs_dir}/sys/fs/selinux"
+    sudo umount "${root_fs_dir}/sys"
   fi
 
   # Make the filesystem un-mountable as read-write and setup verity.
